@@ -24,7 +24,7 @@ SKIP: {
 	my $grab = ScreenGrab( 0, 0, 100, 100);
 	ok( $grab, 'grab screen');
 
-	my $halfgrab = $grab-> extract( 25, 100 - 25, 25, 25);
+	my $halfgrab = $grab-> extract( 25, $grab-> height - 25 - 25, 25, 25);
 	ok( $halfgrab, 'extract from image');
 
 	my ( $x, $y) = FindImage( $grab, $halfgrab);

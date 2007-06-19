@@ -45,9 +45,9 @@ die "Icon #1 is not found on the screen" unless defined $x;
 print "Icon #1 found at $x,$y\n";
 
 $x += ImageWidth( $icons{1}) / 2;
-$y -= ImageHeight( $icons{1}) / 2;
+$y += ImageHeight( $icons{1}) / 2;
 
-MouseClick( $x, $y, 'Left');
+SendMouseClick( $x, $y, 'Left');
 
 # click on address bar
 ( $x, $y) = WaitForImage( $icons{2}, 3.0 );
@@ -55,8 +55,8 @@ die "Icon #2 is not found on the screen" unless defined $x;
 print "Icon #2 found at $x,$y\n";
 
 $x += ImageWidth( $icons{2}) / 2; 
-$y -= ImageHeight( $icons{2}) / 2;
-MouseClick( $x, $y, 'Left');
+$y += ImageHeight( $icons{2}) / 2;
+SendMouseClick( $x, $y, 'Left');
 
 
 # get window handle

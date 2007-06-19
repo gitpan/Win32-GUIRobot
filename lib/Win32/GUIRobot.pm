@@ -8,7 +8,7 @@ use Prima;
 use Prima::Application;
 use Time::HiRes qw(time);
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -18,8 +18,8 @@ our @EXPORT_OK = qw(
 	FindImage   WaitForImage
 
 	Sleep
-	CloseWindow
-	MouseClick MouseMove MouseMoveRel
+	CloseWindow Rect2OffsetSize
+	SendMouseClick MouseMove MouseMoveRel
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 if ( $^O =~ /win32|cygwin/i) {
@@ -35,7 +35,7 @@ my %mouse_buttons = (
 	Right  => [ \&SendRButtonDown, \&SendRButtonUp ],
 );
 
-our $EventDelay = 0.02;
+our $EventDelay = 0.1;
 
 sub LoadImage    { Prima::Image-> load( @_ ) }
 sub ImageDepth   { shift-> type & im::BPP  }
@@ -46,6 +46,7 @@ sub ScreenWidth  { $::application-> width }
 sub ScreenHeight { $::application-> height }
 sub Sleep        { select ( undef, undef, undef, $_[0] || $EventDelay ) }
 sub CloseWindow  { PostMessage( $_[0], 16, 0, 0) }
+sub Rect2OffsetSize { $_[0], $_[1], $_[2] - $_[0], $_[3] - $_[0] }
 
 sub ScreenGrab
 {
@@ -92,10 +93,10 @@ sub FindImage
 		substr( $G, pos($G)) = '';
 	}
 	$y = int(( $D + pos($G)) / $gw) + 1;
-	return ( $x - $w, $image-> height - $y + $subimage-> height);
+	return ( $x - $w, $image-> height - $y);
 }
 
-sub MouseClick
+sub SendMouseClick
 {
 	my ( $x, $y, $button, $delay) = @_;
 
@@ -237,6 +238,13 @@ if coordinates are not given) for $SUBIMAGE to appear. Takes screenshots every
 $SLEEP seconds. Return either empty list when $MAXWAIT expires, or (x,y)
 coordinates where $SUBIMAGE was found otherwise.
 
+=item Rect2OffsetSize $LEFT, $TOP, $RIGHT, $BOTTOM
+
+Converts win32 RECT(left,top,right,bottom) into OffsetSize(left,top,width,height).
+Useful for constructions like
+
+   $grab = ScreenGrab( Rect2OffsetSize( GetWindowRect( $HWND)));
+
 =back
 
 =head1 OTHER FUNCTIONS
@@ -247,7 +255,7 @@ coordinates where $SUBIMAGE was found otherwise.
 
 Sleeps given amount of seconds, or 0.02 by default.
 
-=item MouseClick $BUTTON, $X, $Y, [ $SLEEP_BETWEEN_EVENTS ]
+=item SendMouseClick $BUTTON, $X, $Y, [ $SLEEP_BETWEEN_EVENTS ]
 
 Positions mouse cursor over $X, $Y, sleeps some time, then
 sends button down event, sleeps again, then button up event
