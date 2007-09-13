@@ -24,6 +24,8 @@ SKIP: {
 	my $grab = ScreenGrab( 0, 0, 100, 100);
 	ok( $grab, 'grab screen');
 
+	$grab-> type( 8 ) if ($grab-> type & 0xff) < 8;
+
 	my $halfgrab = $grab-> extract( 25, $grab-> height - 25 - 25, 25, 25);
 	ok( $halfgrab, 'extract from image');
 

@@ -8,7 +8,7 @@ use Prima;
 use Prima::Application;
 use Time::HiRes qw(time);
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -46,7 +46,7 @@ sub ScreenWidth  { $::application-> width }
 sub ScreenHeight { $::application-> height }
 sub Sleep        { select ( undef, undef, undef, $_[0] || $EventDelay ) }
 sub CloseWindow  { PostMessage( $_[0], 16, 0, 0) }
-sub Rect2OffsetSize { $_[0], $_[1], $_[2] - $_[0], $_[3] - $_[0] }
+sub Rect2OffsetSize { $_[0], $_[1], $_[2] - $_[0], $_[3] - $_[1] }
 
 sub ScreenGrab
 {
@@ -73,7 +73,14 @@ sub FindImage
 	my $I   = $subimage-> data;
 	my $W   = $image-> width;
 	my $w   = $subimage-> width;
+
 	my $bpp = ($subimage-> type & im::BPP) / 8;
+
+	die "won't do images with less than 256 colors"
+		if $bpp < 0;
+	die "won't do images with different depth"
+		if $subimage-> type != $image-> type;
+
 	my $gw  = int(( $W * ( $image->    type & im::BPP) + 31) / 32) * 4;
 	my $iw  = int(( $w * ( $subimage-> type & im::BPP) + 31) / 32) * 4;
 	my $ibw = $w * $bpp;
@@ -85,7 +92,7 @@ sub FindImage
 	my ( $x, $y);
 	while ( 1) {
 		study $G;
-		return unless $G =~ m/$rx/g;
+		return unless $G =~ m/$rx/gs;
 		$x = ( $D + pos($G)) % $gw / $bpp;
 		last if $x >= $w;
 		# handle scanline wraps, -- very unlikely, but still

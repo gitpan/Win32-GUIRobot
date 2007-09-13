@@ -29,7 +29,7 @@ for my $fn (
 	die "Image '$fn' is wider than the screen" 
 		if ImageWidth( $icon) > ScreenWidth;
 	die "Image '$fn' is higher than the screen" 
-		if ImageHeight( $icon) > ScreenWidth;
+		if ImageHeight( $icon) > ScreenHeight;
 
 	my $f = $fn;
 	$f =~ s/.png$//;
