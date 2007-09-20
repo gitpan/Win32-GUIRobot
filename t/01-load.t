@@ -1,7 +1,7 @@
 # $Id$
 
 my $NUM;
-BEGIN { $NUM = 4; }
+BEGIN { $NUM = 6; }
 use strict;
 use Test::More tests => $NUM;
 
@@ -20,6 +20,10 @@ SKIP: {
 	eval "use Win32::GUIRobot qw(:all);";
 	ok(not($@), 'use Win32::GUIRobot'); 
 	warn $@ if $@;
+	
+	require Prima;
+	ok(not($@), 'use Prima'); 
+	warn $@ if $@;
 
 	my $grab = ScreenGrab( 0, 0, 100, 100);
 	ok( $grab, 'grab screen');
@@ -29,7 +33,14 @@ SKIP: {
 	my $halfgrab = $grab-> extract( 25, $grab-> height - 25 - 25, 25, 25);
 	ok( $halfgrab, 'extract from image');
 
-	my ( $x, $y) = FindImage( $grab, $halfgrab);
+	# mark all non-halfgrab black so only one match is possible
+	$grab-> put_image( 0, 0, $grab, rop::XorPut());
+	$grab-> put_image( 25, $grab-> height - 25 - 25, $halfgrab);
+
+	my ( $x, $y, $idx) = FindImage( $grab, $halfgrab);
 	ok((defined($x) and defined($y) and ($x == 25) and ($y == 25)), 'find image');
+	
+	( $x, $y, $idx) = FindImage( $grab, [ $halfgrab, $halfgrab ]);
+	ok((defined($x) and defined($y) and ($x == 25) and ($y == 25) and $idx == 0), 'find image in a list');
 }
 
