@@ -8,7 +8,7 @@ use Prima;
 use Prima::Application;
 use Time::HiRes qw(time);
 
-our $VERSION = 0.04;
+our $VERSION = 0.05;
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -145,31 +145,40 @@ sub MouseMoveRel
 
 sub WaitForImage
 {
-	my ( $subimage, $max_wait, $sleep, @rect) = @_;
+	my ( $subimage, %options) = @_;
 
-	if ( 0 == @rect) {
-		@rect   = (0,0,$::application-> size)
-	} elsif ( 1 == @rect) {
-		@rect = Rect2OffsetSize( GetWindowRect( $rect[0] ));
-	} elsif ( 4 != @rect) {
-		die "Bad rectangle, wanted 4 elements, got ", scalar(@rect);
+	my @rect;
+	
+	if ($options{window}) {
+		@rect = Rect2OffsetSize( GetWindowRect( $options{window} ));
+	} elsif ( $options{rect}) {
+		@rect = @{$options{rect}};
+	} else {
+		@rect = (0, 0, $::application-> size);
 	}
 
-	$max_wait += time;
+	$options{maxwait} ||= 0;
+	$options{maxwait} += time;
+
+	my $grab;
 	while ( 1) {
-		my $grab = ScreenGrab( @rect);
-		return unless $grab;
+		$grab = ScreenGrab( @rect);
+		last unless $grab;
 
 		my ( $x, $y, $idx) = FindImage( $grab, $subimage);
-		return $x + $rect[0], $y + $rect[1], $idx
-			if defined $x;
+		return {
+			ok   => 1,
+			x    => $x + $rect[0],
+			y    => $y + $rect[1],
+			idx  => $idx
+		} if defined $x;
 
-		return if time > $max_wait;
+		last if time > $options{maxwait};
 
-		Sleep( $sleep);
+		Sleep( $options{sleep} );
 	}
 
-	return;
+	return { grab => $grab } ;
 }
 
 
@@ -252,18 +261,23 @@ Returns $IMAGE height
 Searches position of $SUBIMAGE in $IMAGE, reports coordinate if found, empty
 list otherwise. $SUBIMAGE can be an array of images, in which case, coordinates
 of first found image is reported, and the index of the image found is returned
-as a third parameter. Since C<FindImage> is called within C<WaitForImage>,
+as a third value. Since C<FindImage> is called within C<WaitForImage>,
 the latter can also treat $SUBIMAGE as array of images.
 
-=item WaitForImage $SUBIMAGE, $MAXWAIT, $SLEEP, [ $WINDOW | $X, $Y, $WIDTH, $HEIGHT ] 
+=item WaitForImage $SUBIMAGE, %OPTIONS
 
-Monitors area given by $X,$Y,$WIDTH,$HEIGHT on the screen ( or the whole screen
-if coordinates are not given) for $SUBIMAGE to appear. Takes screenshots every
-$SLEEP seconds. Return either empty list when $MAXWAIT expires, or (x,y)
-coordinates where $SUBIMAGE was found otherwise.
+Monitors area on the screen for $SUBIMAGE to appear by taking screenshots every
+C<$OPTIONS{sleep}> seconds. Fails list when C<$OPTIONS{maxwait}> expires, succeeds
+and returns (x,y) coordinates where $SUBIMAGE was found otherwise.
 
-If, instead of ($X,$Y,$WIDTH,$HEIGHT) one scalar given, it is treated as a window
-handle, and the area is calculated from its extents.
+The monitored area is can be selected either by specifying C<$OPTIONS{window}>
+in which case the window area is tracked, or by speciying explicit C<$OPTIONS{rect}>
+which is a 4-integer (X,Y,WIDTH,HEIGHT) rectangle, or by not specifying anything,
+in which case the whole screen is monitored.
+
+Returns a hash reference, which contains C<ok> boolean success flag, C<x> and C<y>
+coordinated and an optional C<idx> image index (see third value in C<FindImage>).
+Also, C<grab> in the hash points to the last analyzed screenshot.
 
 =item Rect2OffsetSize $LEFT, $TOP, $RIGHT, $BOTTOM
 
